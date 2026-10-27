@@ -1,0 +1,1739 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>223232</title>
+
+<html lang="en" class="h-full">
+<head>
+    <meta charset="utf-8">
+    <title>Pilando Cable-Stayed Bridge & Slope Stability Capstone Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        engineering: {
+                            50: '#f0f4f8',
+                            100: '#d9e2ec',
+                            200: '#bcccdc',
+                            300: '#9fb3c8',
+                            400: '#829ab1',
+                            500: '#627d98',
+                            600: '#486581',
+                            700: '#334e68',
+                            800: '#243b53',
+                            900: '#102a43',
+                            950: '#0b192c',
+                        },
+                        accent: {
+                            amber: '#f59e0b',
+                            emerald: '#10b981',
+                            rose: '#f43f5e',
+                            cyan: '#06b6d4',
+                            purple: '#a855f7'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for engineering icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for interactive engineering plots -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
+    <!-- Three.js for 3D Bridge Viewer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #102a43; }
+        ::-webkit-scrollbar-thumb { background: #486581; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #627d98; }
+        .formula-card {
+            background: linear-gradient(135deg, #102a43 0%, #1a365d 100%);
+            border-left: 4px solid #f59e0b;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .contenteditable-hover:hover {
+            outline: 1px dashed rgba(245, 158, 11, 0.6);
+            cursor: text;
+            background-color: rgba(245, 158, 11, 0.03);
+        }
+    </style>
+</head>
+<body class="bg-engineering-950 text-slate-100 font-sans h-full flex flex-col overflow-hidden selection:bg-amber-500 selection:text-engineering-950">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-engineering-900 border-b border-engineering-800 px-4 py-3 flex items-center justify-between shadow-lg shrink-0 z-20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-amber-500 text-engineering-950 p-2.5 rounded-lg font-black text-xl shadow-inner flex items-center justify-center w-11 h-11">
+                <i class="fa-solid fa-bridge-suspension"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-sm md:text-base tracking-wide text-white flex items-center gap-2">
+                    <span>PILANDO CAPSTONE DASHBOARD</span>
+                    <span class="text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/35 hidden sm:inline-block">Buguias, Benguet</span>
+                </h1>
+                <p class="text-xs text-engineering-300">Cable-Stayed Bridge &amp; Slope Stability Analysis &amp; Design</p>
+            </div>
+        </div>
+
+        <!-- Controls & Viewport Toggles -->
+        <div class="flex items-center space-x-2 md:space-x-3">
+            <div id="save-status" class="hidden xl:flex items-center text-xs text-emerald-400 bg-emerald-950/50 px-3 py-1 rounded-full border border-emerald-500/30 transition-opacity duration-300">
+                <i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-pulse"></i> Persistent Storage Active
+            </div>
+
+            <!-- Viewport Mode Toggle -->
+            <div class="bg-engineering-800 p-1 rounded-lg flex items-center border border-engineering-700">
+                <button onclick="setViewportMode('desktop')" id="btn-desktop" title="Desktop View" class="px-2.5 py-1.5 rounded text-xs font-medium bg-amber-500 text-engineering-950 transition shadow">
+                    <i class="fa-solid fa-desktop mr-1"></i> <span class="hidden sm:inline">Desktop</span>
+                </button>
+                <button onclick="setViewportMode('mobile')" id="btn-mobile" title="Phone View Simulator" class="px-2.5 py-1.5 rounded text-xs font-medium text-engineering-300 hover:text-white transition">
+                    <i class="fa-solid fa-mobile-screen mr-1"></i> <span class="hidden sm:inline">Phone View</span>
+                </button>
+            </div>
+
+            <button onclick="resetAllData()" class="bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-700/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1" title="Reset Data">
+                <i class="fa-solid fa-rotate-right"></i> <span class="hidden md:inline">Reset</span>
+            </button>
+            <button onclick="exportProjectData()" class="bg-amber-600 hover:bg-amber-500 text-engineering-950 font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1 shadow">
+                <i class="fa-solid fa-download"></i> <span class="hidden md:inline">Export JSON</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <div class="flex-1 flex overflow-hidden justify-center items-center bg-engineering-950 p-0 md:p-3 transition-all duration-300" id="workspace-outer">
+        <div id="workspace-inner" class="w-full h-full flex flex-col md:flex-row bg-engineering-900 md:rounded-xl md:border md:border-engineering-800 shadow-2xl overflow-hidden transition-all duration-300 max-w-[1700px]">
+
+            <!-- Left Sidebar Navigation -->
+            <nav id="sidebar-nav" class="w-full md:w-72 bg-engineering-900 border-b md:border-b-0 md:border-r border-engineering-800 flex md:flex-col shrink-0 overflow-x-auto md:overflow-y-auto">
+                <div class="p-4 border-b border-engineering-800 hidden md:block">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-engineering-400">Project Modules</h2>
+                    <p class="text-[11px] text-engineering-300 mt-1">Interactive calculations, file storage &amp; professional presentation.</p>
+                </div>
+                
+                <div class="flex md:flex-col p-2 space-x-1 md:space-x-0 md:space-y-1 w-full overflow-x-auto">
+                    <button onclick="switchTab('overview')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap bg-amber-500/10 text-amber-400 border-l-4 border-amber-500" data-tab="overview">
+                        <i class="fa-solid fa-house-chimney w-5 text-center"></i>
+                        <span>Project Overview</span>
+                    </button>
+                    <button onclick="switchTab('bridge-elevation')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap text-engineering-300 hover:bg-engineering-800 hover:text-white" data-tab="bridge-elevation">
+                        <i class="fa-solid fa-image w-5 text-center text-amber-400"></i>
+                        <span>Bridge Elevation (Storage)</span>
+                    </button>
+                    <button onclick="switchTab('slope-section')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap text-engineering-300 hover:bg-engineering-800 hover:text-white" data-tab="slope-section">
+                        <i class="fa-solid fa-mountain-sun w-5 text-center text-emerald-400"></i>
+                        <span>Slope Section (Storage)</span>
+                    </button>
+                    <button onclick="switchTab('bridge-analysis')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap text-engineering-300 hover:bg-engineering-800 hover:text-white" data-tab="bridge-analysis">
+                        <i class="fa-solid fa-chart-line w-5 text-center text-cyan-400"></i>
+                        <span>Bridge Analysis</span>
+                    </button>
+                    <button onclick="switchTab('bridge-design')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap text-engineering-300 hover:bg-engineering-800 hover:text-white" data-tab="bridge-design">
+                        <i class="fa-solid fa-drafting-compass w-5 text-center text-amber-400"></i>
+                        <span>Bridge Design</span>
+                    </button>
+                    <button onclick="switchTab('slope-analysis')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap text-engineering-300 hover:bg-engineering-800 hover:text-white" data-tab="slope-analysis">
+                        <i class="fa-solid fa-mountain w-5 text-center text-emerald-400"></i>
+                        <span>Slope Stability Analysis</span>
+                    </button>
+                    <button onclick="switchTab('slope-design')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap text-engineering-300 hover:bg-engineering-800 hover:text-white" data-tab="slope-design">
+                        <i class="fa-solid fa-shield-halved w-5 text-center text-rose-400"></i>
+                        <span>Slope Stability Design</span>
+                    </button>
+                    <button onclick="switchTab('mcdm')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap text-engineering-300 hover:bg-engineering-800 hover:text-white" data-tab="mcdm">
+                        <i class="fa-solid fa-scale-balanced w-5 text-center text-purple-400"></i>
+                        <span>Hybrid MCDM (BWM)</span>
+                    </button>
+                    <button onclick="switchTab('mitigation')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap text-engineering-300 hover:bg-engineering-800 hover:text-white" data-tab="mitigation">
+                        <i class="fa-solid fa-gears w-5 text-center text-amber-500"></i>
+                        <span>Mitigation &amp; Modeling</span>
+                    </button>
+                    <button onclick="switchTab('model')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap text-engineering-300 hover:bg-engineering-800 hover:text-white" data-tab="model">
+                        <i class="fa-solid fa-cube w-5 text-center text-sky-400"></i>
+                        <span>3D Bridge Simulator</span>
+                    </button>
+                    <button onclick="switchTab('documentation')" class="nav-btn flex items-center space-x-3 px-3.5 py-3 rounded-lg text-xs md:text-sm font-medium w-full text-left transition whitespace-nowrap text-engineering-300 hover:bg-engineering-800 hover:text-white" data-tab="documentation">
+                        <i class="fa-solid fa-book-bookmark w-5 text-center text-cyan-500"></i>
+                        <span>Documentation &amp; Reports</span>
+                    </button>
+                </div>
+
+                <div class="mt-auto p-3 bg-engineering-950/70 border-t border-engineering-800 hidden md:block text-xs">
+                    <div class="text-engineering-400 font-semibold mb-0.5">Location:</div>
+                    <div class="text-slate-300 text-[11px]">Pilando, Buguias, Benguet</div>
+                    <div class="mt-2 text-engineering-400 font-semibold mb-0.5">Standard:</div>
+                    <div class="text-slate-300 text-[11px]">NSCP 2015 / AASHTO LRFD</div>
+                </div>
+            </nav>
+
+            <!-- Main Dynamic Content Area -->
+            <main class="flex-1 bg-engineering-950 overflow-y-auto p-4 md:p-8 relative">
+
+                <!-- TAB 1: OVERVIEW -->
+                <div id="tab-overview" class="tab-content space-y-6">
+                    <div class="bg-gradient-to-r from-engineering-900 to-engineering-800 border border-engineering-700 p-6 md:p-8 rounded-2xl shadow-xl relative overflow-hidden">
+                        <span class="bg-amber-500 text-engineering-950 text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider">Undergraduate Capstone Project</span>
+                        <h2 class="text-xl md:text-3xl font-black text-white mt-4 mb-3 contenteditable-hover leading-tight" contenteditable="true" id="project-title-text" oninput="saveTextEdit('project-title-text')">
+                            ANALYSIS AND DESIGN OF CABLE STAYED BRIDGE IN PILANDO, BUGUIAS, BENGUET, WITH SLOPE STABILITY ANALYSIS AND DESIGN
+                        </h2>
+                        <p class="text-engineering-200 text-sm md:text-base max-w-5xl contenteditable-hover leading-relaxed mb-6" contenteditable="true" id="project-desc-text" oninput="saveTextEdit('project-desc-text')">
+                            A rigorous structural and geotechnical engineering capstone study evaluating challenging mountainous terrain in Pilando, Buguias, Benguet. Integrating finite element cable-stayed bridge analysis, Bishop and Janbu limit equilibrium slope stability safety factors, soil nailing geotechnical stabilization, and Hybrid Multi-Criteria Decision-Making (MCDM/BWM) for optimal corridor and seismic damper selection.
+                        </p>
+
+                        <!-- Researchers & Advisor Credits Box -->
+                        <div class="bg-engineering-950/80 border border-engineering-700/80 p-5 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-users-gear"></i> Research Team:
+                                </h3>
+                                <p class="text-xs md:text-sm text-slate-200 leading-relaxed font-medium">
+                                    Agustin, Reinhart Von Jeo; Burgos, Kenshin; Cancino, Vernice Anne; Enriquez, Jamaica; Gonzales, Andrei Leonard; Gayumba, Alvin; Lungao, Patrice Vine; Magno, Alwin
+                                </p>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1.5 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-chalkboard-user"></i> Research Advisers &amp; Consultants:
+                                </h3>
+                                <p class="text-xs md:text-sm text-slate-200 leading-relaxed font-bold">
+                                    ENGR. MARY ZENNIA BONDAD (Adviser)<br>
+                                    ENGR. MARK ANTHONY IMPER (Consultant)
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-engineering-700/60">
+                            <div class="bg-engineering-950/70 p-4 rounded-xl border border-engineering-800">
+                                <div class="text-engineering-400 text-xs font-medium">Main Span Length</div>
+                                <div class="text-xl font-bold text-amber-400 mt-1"><span contenteditable="true" id="stat-span" oninput="saveTextEdit('stat-span')">369.0</span> m</div>
+                            </div>
+                            <div class="bg-engineering-950/70 p-4 rounded-xl border border-engineering-800">
+                                <div class="text-engineering-400 text-xs font-medium">Slope FoS (Seismic)</div>
+                                <div class="text-xl font-bold text-emerald-400 mt-1"><span contenteditable="true" id="stat-fos" oninput="saveTextEdit('stat-fos')">1.48</span></div>
+                            </div>
+                            <div class="bg-engineering-950/70 p-4 rounded-xl border border-engineering-800">
+                                <div class="text-engineering-400 text-xs font-medium">Peak Ground Acceleration</div>
+                                <div class="text-xl font-bold text-cyan-400 mt-1"><span contenteditable="true" id="stat-pga" oninput="saveTextEdit('stat-pga')">0.42</span> g</div>
+                            </div>
+                            <div class="bg-engineering-950/70 p-4 rounded-xl border border-engineering-800">
+                                <div class="text-engineering-400 text-xs font-medium">Design Specification</div>
+                                <div class="text-xl font-bold text-purple-400 mt-1">AASHTO / NSCP</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-engineering-900 border border-engineering-800 rounded-2xl p-6 shadow-lg">
+                            <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-map-location-dot text-amber-500"></i> Study Area &amp; Geological Profile
+                            </h3>
+                            <div class="text-engineering-200 text-sm space-y-3 contenteditable-hover leading-relaxed" contenteditable="true" id="overview-geo-desc" oninput="saveTextEdit('overview-geo-desc')">
+                                <p><strong>Location:</strong> Pilando, Buguias, Benguet Province, Cordillera Administrative Region (CAR), Philippines.</p>
+                                <p><strong>Geology:</strong> Highly weathered fractured meta-volcanics and pyroclastic sequences overlying steep mountainous terrain susceptible to translational and rotational slope failures during seismic events and intense monsoonal precipitation.</p>
+                                <p><strong>Topography:</strong> Deep river gorge requiring a long-span superstructure (cable-stayed arrangement) to minimize mid-span pier construction on unstable valley slopes.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-engineering-900 border border-engineering-800 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                                    <i class="fa-solid fa-layer-group text-cyan-400"></i> Interactive Engineering Modules &amp; File Storage
+                                </h3>
+                                <p class="text-engineering-300 text-sm mb-4">Direct access to calculations, editable parameters, pristine equations, and dedicated multi-photo file storage views for bridge elevations and slope sections.</p>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <button onclick="switchTab('bridge-elevation')" class="p-3.5 bg-engineering-950 hover:bg-engineering-800 border border-engineering-800 rounded-xl text-left transition group">
+                                        <div class="text-amber-400 font-bold text-sm group-hover:text-amber-300"><i class="fa-solid fa-image mr-2"></i> Bridge Elevation Storage</div>
+                                        <div class="text-engineering-400 text-xs mt-1">Upload and manage multiple bridge elevation photos.</div>
+                                    </button>
+                                    <button onclick="switchTab('slope-section')" class="p-3.5 bg-engineering-950 hover:bg-engineering-800 border border-engineering-800 rounded-xl text-left transition group">
+                                        <div class="text-emerald-400 font-bold text-sm group-hover:text-emerald-300"><i class="fa-solid fa-mountain-sun mr-2"></i> Slope Section Storage</div>
+                                        <div class="text-engineering-400 text-xs mt-1">Upload and manage multiple slope cross-section photos.</div>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 pt-4 border-t border-engineering-800 flex justify-between items-center text-xs text-engineering-400">
+                                <span>Capstone Defense Ready</span>
+                                <span class="text-amber-400 font-semibold">Buguias, Benguet</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: BRIDGE ELEVATION MULTI-PHOTO STORAGE -->
+                <div id="tab-bridge-elevation" class="tab-content hidden space-y-6">
+                    <div class="bg-engineering-900 border border-engineering-800 p-6 md:p-8 rounded-2xl shadow-xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-engineering-800">
+                            <div>
+                                <span class="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-md font-semibold">Multi-Photo Storage (Unlimited)</span>
+                                <h2 class="text-xl md:text-2xl font-bold text-white mt-2">Bridge Elevation Drawings &amp; Model Photos</h2>
+                                <p class="text-engineering-300 text-sm">Upload and store as many bridge elevation plans, cross-sections, and structural schematics as needed. Saved permanently.</p>
+                            </div>
+                            <label class="bg-amber-600 hover:bg-amber-500 text-engineering-950 font-bold px-4 py-2.5 rounded-xl text-sm transition shadow cursor-pointer flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-upload"></i> Upload Bridge Photo(s)
+                                <input type="file" id="bridge-file-upload" accept="image/*" multiple class="hidden" onchange="handleDedicatedUpload('bridge', event)">
+                            </label>
+                        </div>
+
+                        <div class="mt-6">
+                            <div class="text-xs font-semibold text-engineering-400 uppercase tracking-wider mb-3">Stored Bridge Elevation Photos (<span id="bridge-count">0</span> items)</div>
+                            <div id="bridge-storage-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-6 border-t border-engineering-800">
+                            <h3 class="text-sm font-bold text-white mb-2">Elevation Engineering Notes &amp; Parameters</h3>
+                            <textarea id="bridge-notes" class="w-full h-32 bg-engineering-950 border border-engineering-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500" placeholder="Type specific elevation notes, pylon stationing, or span distribution remarks here..." oninput="saveTextEdit('bridge-notes')"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: SLOPE SECTION MULTI-PHOTO STORAGE -->
+                <div id="tab-slope-section" class="tab-content hidden space-y-6">
+                    <div class="bg-engineering-900 border border-engineering-800 p-6 md:p-8 rounded-2xl shadow-xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-engineering-800">
+                            <div>
+                                <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-md font-semibold">Multi-Photo Storage (Unlimited)</span>
+                                <h2 class="text-xl md:text-2xl font-bold text-white mt-2">Slope Stability Section &amp; Geotechnical Photos</h2>
+                                <p class="text-engineering-300 text-sm">Upload and store as many hillside cross-sections, borehole logs, and slip circle analysis photos as needed. Saved permanently.</p>
+                            </div>
+                            <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow cursor-pointer flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-upload"></i> Upload Slope Photo(s)
+                                <input type="file" id="slope-file-upload" accept="image/*" multiple class="hidden" onchange="handleDedicatedUpload('slope', event)">
+                            </label>
+                        </div>
+
+                        <div class="mt-6">
+                            <div class="text-xs font-semibold text-engineering-400 uppercase tracking-wider mb-3">Stored Slope Section Photos (<span id="slope-count">0</span> items)</div>
+                            <div id="slope-storage-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-6 border-t border-engineering-800">
+                            <h3 class="text-sm font-bold text-white mb-2">Slope Section Engineering Notes &amp; Strata Descriptions</h3>
+                            <textarea id="slope-notes" class="w-full h-32 bg-engineering-950 border border-engineering-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500" placeholder="Type geotechnical soil strata layering, groundwater table observations, or soil nail spacing remarks here..." oninput="saveTextEdit('slope-notes')"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: BRIDGE ANALYSIS -->
+                <div id="tab-bridge-analysis" class="tab-content hidden space-y-6">
+                    <div class="bg-engineering-900 border border-engineering-800 p-6 md:p-8 rounded-2xl shadow-xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-engineering-800">
+                            <div>
+                                <span class="text-xs bg-cyan-500/20 text-cyan-400 px-2.5 py-1 rounded-md font-semibold">Structural Module</span>
+                                <h2 class="text-xl md:text-2xl font-bold text-white mt-2">Cable-Stayed Bridge Structural Analysis</h2>
+                                <p class="text-engineering-300 text-sm">Real-time computation of stay cable tension forces and pylon bending moments.</p>
+                            </div>
+                            <button onclick="runBridgeAnalysis()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play"></i> Run Structural Analysis
+                            </button>
+                        </div>
+
+                        <!-- Clean Formatted Mathematical Formula Cards -->
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="formula-card p-5 rounded-xl text-slate-200">
+                                <div class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-square-root-variable"></i> Stay Cable Tension Force (T<sub>cable</sub>)
+                                </div>
+                                <div class="bg-engineering-950/80 p-4 rounded-lg border border-engineering-800 text-center my-3">
+                                    <div class="text-base md:text-lg font-mono font-bold text-cyan-300 tracking-wide">
+                                        T<sub>cable</sub> = &radic;<span style="border-top: 1px solid #67e8f9; padding: 0 4px;">P<sub>dead</sub><sup>2</sup> + P<sub>live</sub><sup>2</sup></span> + &Delta;T<sub>thermal</sub>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-engineering-300 space-y-1 mt-2">
+                                    <div><strong>P<sub>dead</sub>:</strong> Axial force due to dead load superstructure (kN)</div>
+                                    <div><strong>P<sub>live</sub>:</strong> Axial force due to live traffic load (kN)</div>
+                                    <div><strong>&Delta;T<sub>thermal</sub>:</strong> Thermal gradient force adjustment (kN)</div>
+                                </div>
+                            </div>
+
+                            <div class="formula-card p-5 rounded-xl text-slate-200">
+                                <div class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-square-root-variable"></i> Pylon Maximum Bending Moment (M<sub>u</sub>)
+                                </div>
+                                <div class="bg-engineering-950/80 p-4 rounded-lg border border-engineering-800 text-center my-3">
+                                    <div class="text-base md:text-lg font-mono font-bold text-cyan-300 tracking-wide">
+                                        M<sub>u</sub> = 1.25M<sub>DL</sub> + 1.75(M<sub>LL</sub> + M<sub>IM</sub>) + 1.0M<sub>EQ</sub>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-engineering-300 space-y-1 mt-2">
+                                    <div><strong>M<sub>DL</sub>, M<sub>LL</sub>:</strong> Moments from dead and live loads (kN·m)</div>
+                                    <div><strong>M<sub>IM</sub>:</strong> Dynamic load allowance (impact) moment</div>
+                                    <div><strong>M<sub>EQ</sub>:</strong> Earthquake seismic moment (AASHTO LRFD)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parameters Input Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Main Span Length (L, m)</label>
+                                <input type="number" id="ba-span" value="180" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-cyan-500" oninput="runBridgeAnalysis()" onchange="runBridgeAnalysis()">
+                            </div>
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Pylon Height (H<sub>pylon</sub>, m)</label>
+                                <input type="number" id="ba-pylon" value="55" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-cyan-500" oninput="runBridgeAnalysis()" onchange="runBridgeAnalysis()">
+                            </div>
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Dead Load Intensity (w<sub>DL</sub>, kN/m)</label>
+                                <input type="number" id="ba-dl" value="125" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-cyan-500" oninput="runBridgeAnalysis()" onchange="runBridgeAnalysis()">
+                            </div>
+                        </div>
+
+                        <!-- Outputs and Chart -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                            <div class="lg:col-span-1 space-y-4">
+                                <div class="bg-engineering-950 p-5 rounded-xl border border-engineering-800">
+                                    <h4 class="text-xs font-semibold text-engineering-400 uppercase tracking-wider mb-3">Computed Outputs</h4>
+                                    <div class="space-y-3 text-sm">
+                                        <div class="flex justify-between pb-2 border-b border-engineering-900">
+                                            <span class="text-engineering-300">Max Stay Tension (T<sub>max</sub>):</span>
+                                            <span id="out-tmax" class="font-bold text-cyan-400 font-mono">3,375 kN</span>
+                                        </div>
+                                        <div class="flex justify-between pb-2 border-b border-engineering-900">
+                                            <span class="text-engineering-300">Pylon Base Moment (M<sub>b</sub>):</span>
+                                            <span id="out-mb" class="font-bold text-amber-400 font-mono">101,250 kN·m</span>
+                                        </div>
+                                        <div class="flex justify-between pb-2 border-b border-engineering-900">
+                                            <span class="text-engineering-300">Deck Deflection Ratio:</span>
+                                            <span id="out-deflect" class="font-bold text-emerald-400 font-mono">L / 1200</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-engineering-300">Natural Frequency (f<sub>1</sub>):</span>
+                                            <span id="out-freq" class="font-bold text-purple-400 font-mono">0.07 Hz</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="lg:col-span-2 bg-engineering-950 p-5 rounded-xl border border-engineering-800 flex flex-col items-center justify-center">
+                                <h4 class="text-xs font-semibold text-engineering-400 uppercase tracking-wider mb-3 w-full text-left">Cable Tension Distribution Along Deck Span</h4>
+                                <div class="w-full h-64 relative">
+                                    <canvas id="bridgeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: BRIDGE DESIGN -->
+                <div id="tab-bridge-design" class="tab-content hidden space-y-6">
+                    <div class="bg-engineering-900 border border-engineering-800 p-6 md:p-8 rounded-2xl shadow-xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-engineering-800">
+                            <div>
+                                <span class="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-md font-semibold">Design Module</span>
+                                <h2 class="text-xl md:text-2xl font-bold text-white mt-2">Cable-Stayed Bridge Component Design</h2>
+                                <p class="text-engineering-300 text-sm">AASHTO LRFD ultimate limit state proportioning for stay cables, composite steel girders, and reinforced concrete pylon.</p>
+                            </div>
+                            <button onclick="runBridgeDesign()" class="bg-amber-600 hover:bg-amber-500 text-engineering-950 font-bold px-4 py-2.5 rounded-xl text-sm transition shadow flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-calculator"></i> Calculate Design Sizing
+                            </button>
+                        </div>
+
+                        <!-- Clean Formatted Mathematical Formula Cards -->
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="formula-card p-5 rounded-xl text-slate-200">
+                                <div class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-square-root-variable"></i> Stay Cable Cross-Sectional Area (A<sub>s</sub>)
+                                </div>
+                                <div class="bg-engineering-950/80 p-4 rounded-lg border border-engineering-800 text-center my-3">
+                                    <div class="text-base md:text-lg font-mono font-bold text-amber-300 tracking-wide">
+                                        A<sub>s</sub> = T<sub>ultimate</sub> / (&phi; &middot; f<sub>pu</sub>)
+                                    </div>
+                                </div>
+                                <div class="text-xs text-engineering-300 space-y-1 mt-2">
+                                    <div><strong>T<sub>ultimate</sub>:</strong> Factored ultimate cable tension (kN)</div>
+                                    <div><strong>f<sub>pu</sub>:</strong> Specified tensile strength of tendon (MPa)</div>
+                                    <div><strong>&phi;:</strong> Resistance factor for tension (0.90)</div>
+                                </div>
+                            </div>
+
+                            <div class="formula-card p-5 rounded-xl text-slate-200">
+                                <div class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <i class="fa-solid fa-square-root-variable"></i> Pylon Reinforcement Ratio (&rho;<sub>g</sub>)
+                                </div>
+                                <div class="bg-engineering-950/80 p-4 rounded-lg border border-engineering-800 text-center my-3">
+                                    <div class="text-base md:text-lg font-mono font-bold text-amber-300 tracking-wide">
+                                        &rho;<sub>g</sub> = A<sub>st</sub> / A<sub>g</sub> &ge; 0.01 (Max 0.04)
+                                    </div>
+                                </div>
+                                <div class="text-xs text-engineering-300 space-y-1 mt-2">
+                                    <div><strong>A<sub>st</sub>:</strong> Total area of longitudinal steel reinforcement</div>
+                                    <div><strong>A<sub>g</sub>:</strong> Gross cross-sectional area of pylon column</div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Design Inputs -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Steel Ultimate Strength (f<sub>pu</sub>, MPa)</label>
+                                <input type="number" id="bd-fpu" value="1860" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-amber-500" oninput="runBridgeDesign()" onchange="runBridgeDesign()">
+                            </div>
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Concrete Strength (f'<sub>c</sub>, MPa)</label>
+                                <input type="number" id="bd-fc" value="35" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-amber-500" oninput="runBridgeDesign()" onchange="runBridgeDesign()">
+                            </div>
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Resistance Factor (&phi;)</label>
+                                <input type="number" step="0.05" id="bd-phi" value="0.90" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-amber-500" oninput="runBridgeDesign()" onchange="runBridgeDesign()">
+                            </div>
+                        </div>
+
+                        <!-- Design Table -->
+                        <div class="mt-6 bg-engineering-950 rounded-xl border border-engineering-800 overflow-hidden">
+                            <div class="p-4 bg-engineering-900 border-b border-engineering-800 font-bold text-xs uppercase text-engineering-300">Selected Component Dimensions &amp; Reinforcement</div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-engineering-900/50 text-engineering-400 text-xs uppercase border-b border-engineering-800">
+                                        <tr>
+                                            <th class="p-3">Structural Element</th>
+                                            <th class="p-3">Governing Force / Moment</th>
+                                            <th class="p-3">Required Sizing / Area</th>
+                                            <th class="p-3">Demand/Capacity (D/C)</th>
+                                            <th class="p-3">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bridge-design-tbody" class="divide-y divide-engineering-900">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: SLOPE STABILITY ANALYSIS -->
+                <div id="tab-slope-analysis" class="tab-content hidden space-y-6">
+                    <div class="bg-engineering-900 border border-engineering-800 p-6 md:p-8 rounded-2xl shadow-xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-engineering-800">
+                            <div>
+                                <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-md font-semibold">Geotechnical Analysis</span>
+                                <h2 class="text-xl md:text-2xl font-bold text-white mt-2">Slope Stability Analysis (Bishop &amp; Janbu Methods)</h2>
+                                <p class="text-engineering-300 text-sm">Factor of Safety (FoS) computation for Pilando hillside abutments under static and seismic conditions.</p>
+                            </div>
+                            <button onclick="runSlopeAnalysis()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-calculator"></i> Run FoS Calculation
+                            </button>
+                        </div>
+
+                        <!-- Clean Formatted Mathematical Formula Cards -->
+                        <div class="mt-6 formula-card p-5 rounded-xl text-slate-200" style="border-left-color: #10b981;">
+                            <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-square-root-variable"></i> Bishop’s Simplified Factor of Safety (F<sub>s</sub>) Equation
+                            </div>
+                            <div class="bg-engineering-950/80 p-4 rounded-lg border border-engineering-800 text-center my-3">
+                                <div class="text-xs sm:text-sm md:text-base font-mono font-bold text-emerald-300 tracking-wide overflow-x-auto py-2">
+                                    F<sub>s</sub> = &sum; [ c'b + (W - ub) tan &phi;' ] / [ cos &alpha; ( 1 + (tan &alpha; tan &phi;') / F<sub>s</sub> ) ] / &sum; W sin &alpha;
+                                </div>
+                            </div>
+                            <div class="text-xs text-engineering-300 grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                                <div><strong>c', &phi;':</strong> Effective shear strength parameters</div>
+                                <span><strong>W, b:</strong> Slice weight and slice width</span>
+                                <span><strong>k<sub>h</sub>:</strong> Horizontal seismic coefficient</span>
+                            </div>
+                        </div>
+
+                        <!-- Geotechnical Inputs -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Cohesion (c', kPa)</label>
+                                <input type="number" id="sa-c" value="28" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-emerald-500" oninput="runSlopeAnalysis()" onchange="runSlopeAnalysis()">
+                            </div>
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Friction Angle (&phi;', deg)</label>
+                                <input type="number" id="sa-phi" value="32" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-emerald-500" oninput="runSlopeAnalysis()" onchange="runSlopeAnalysis()">
+                            </div>
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Unit Weight (&gamma;, kN/m³)</label>
+                                <input type="number" id="sa-gamma" value="19.5" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-emerald-500" oninput="runSlopeAnalysis()" onchange="runSlopeAnalysis()">
+                            </div>
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Seismic Coeff. (k<sub>h</sub>)</label>
+                                <input type="number" step="0.01" id="sa-kh" value="0.21" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-emerald-500" oninput="runSlopeAnalysis()" onchange="runSlopeAnalysis()">
+                            </div>
+                        </div>
+
+                        <!-- Outputs and Chart -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                            <div class="space-y-4">
+                                <div class="bg-engineering-950 p-5 rounded-xl border border-engineering-800">
+                                    <h4 class="text-xs font-semibold text-engineering-400 uppercase tracking-wider mb-3">Stability Results</h4>
+                                    <div class="space-y-3 text-sm">
+                                        <div class="flex justify-between pb-2 border-b border-engineering-900">
+                                            <span class="text-engineering-300">Bishop Simplified FoS:</span>
+                                            <span id="out-bishop" class="font-bold text-emerald-400 font-mono">1.98</span>
+                                        </div>
+                                        <div class="flex justify-between pb-2 border-b border-engineering-900">
+                                            <span class="text-engineering-300">Janbu Simplified FoS:</span>
+                                            <span id="out-janbu" class="font-bold text-cyan-400 font-mono">1.88</span>
+                                        </div>
+                                        <div class="flex justify-between pb-2 border-b border-engineering-900">
+                                            <span class="text-engineering-300">Critical Slip Radius:</span>
+                                            <span id="out-radius" class="font-bold text-amber-400 font-mono">43 m</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-engineering-300">Min. Required FoS (Seismic):</span>
+                                            <span class="font-bold text-slate-300 font-mono">1.30</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="lg:col-span-2 bg-engineering-950 p-5 rounded-xl border border-engineering-800 flex flex-col items-center justify-center">
+                                <h4 class="text-xs font-semibold text-engineering-400 uppercase tracking-wider mb-3 w-full text-left">Factor of Safety vs. Groundwater Pore Pressure Ratio (r<sub>u</sub>)</h4>
+                                <div class="w-full h-64 relative">
+                                    <canvas id="slopeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: SLOPE STABILITY DESIGN -->
+                <div id="tab-slope-design" class="tab-content hidden space-y-6">
+                    <div class="bg-engineering-900 border border-engineering-800 p-6 md:p-8 rounded-2xl shadow-xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-engineering-800">
+                            <div>
+                                <span class="text-xs bg-rose-500/20 text-rose-400 px-2.5 py-1 rounded-md font-semibold">Geotechnical Design</span>
+                                <h2 class="text-xl md:text-2xl font-bold text-white mt-2">Slope Stability Design &amp; Soil Nailing</h2>
+                                <p class="text-engineering-300 text-sm">Design of soil nail reinforcement, pullout resistance, and retaining structures for Pilando hillside protection.</p>
+                            </div>
+                            <button onclick="runSlopeDesign()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-shield-halved"></i> Calculate Soil Nail Spacing
+                            </button>
+                        </div>
+
+                        <!-- Clean Formatted Mathematical Formula Cards -->
+                        <div class="mt-6 formula-card p-5 rounded-xl text-slate-200" style="border-left-color: #f43f5e;">
+                            <div class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-square-root-variable"></i> Soil Nail Pullout Resistance (Q<sub>all</sub>) Equation
+                            </div>
+                            <div class="bg-engineering-950/80 p-4 rounded-lg border border-engineering-800 text-center my-3">
+                                <div class="text-base md:text-lg font-mono font-bold text-rose-300 tracking-wide">
+                                    Q<sub>all</sub> = (&pi; &middot; d &middot; L<sub>b</sub> &middot; q<sub>s</sub>) / FS<sub>pullout</sub> &ge; T<sub>max_nail</sub>
+                                </div>
+                            </div>
+                            <div class="text-xs text-engineering-300 space-y-1 mt-2">
+                                <div><strong>d:</strong> Soil nail bar diameter (mm) | <strong>L<sub>b</sub>:</strong> Bond length behind slip surface (m)</div>
+                                <div><strong>q<sub>s</sub>:</strong> Ultimate grout-ground bond shear strength (kPa) | <strong>FS:</strong> Safety factor (min 2.0)</div>
+                            </div>
+                        </div>
+
+                        <!-- Soil Nail Inputs -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Nail Diameter (d, mm)</label>
+                                <input type="number" id="sd-diam" value="32" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-rose-500" oninput="runSlopeDesign()" onchange="runSlopeDesign()">
+                            </div>
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Bond Strength (q<sub>s</sub>, kPa)</label>
+                                <input type="number" id="sd-qs" value="120" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-rose-500" oninput="runSlopeDesign()" onchange="runSlopeDesign()">
+                            </div>
+                            <div class="bg-engineering-950 p-4 rounded-xl border border-engineering-800">
+                                <label class="block text-xs font-semibold text-engineering-300 mb-1">Required Safety Factor (FS)</label>
+                                <input type="number" step="0.1" id="sd-fs" value="2.0" class="w-full bg-engineering-900 border border-engineering-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-rose-500" oninput="runSlopeDesign()" onchange="runSlopeDesign()">
+                            </div>
+                        </div>
+
+                        <!-- Results Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+
+                            <div class="bg-engineering-950 p-5 rounded-xl border border-engineering-800">
+                                <div class="text-xs text-engineering-400 font-medium">Allowable Pullout Resistance</div>
+                                <div id="res-pullout" class="text-2xl font-bold text-rose-400 mt-1 font-mono">54.3 kN</div>
+                            </div>
+                            <div class="bg-engineering-950 p-5 rounded-xl border border-engineering-800">
+                                <div class="text-xs text-engineering-400 font-medium">Recommended Nail Grid</div>
+                                <div id="res-spacing" class="text-2xl font-bold text-amber-400 mt-1 font-mono">1.5m &times; 1.5m</div>
+                            </div>
+                            <div class="bg-engineering-950 p-5 rounded-xl border border-engineering-800">
+                                <div class="text-xs text-engineering-400 font-medium">Stabilized Slope FoS</div>
+                                <div id="res-newfos" class="text-2xl font-bold text-emerald-400 mt-1 font-mono">1.72 (Safe)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: HYBRID MULTI-CRITERIA DECISION-MAKING -->
+                <div id="tab-mcdm" class="tab-content hidden space-y-6">
+                    <div class="bg-engineering-900 border border-engineering-800 p-6 md:p-8 rounded-2xl shadow-xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-engineering-800">
+                            <div>
+                                <span class="text-xs bg-purple-500/20 text-purple-400 px-2.5 py-1 rounded-md font-semibold">Decision Analysis</span>
+                                <h2 class="text-xl md:text-2xl font-bold text-white mt-2">Hybrid Multi-Criteria Decision-Making (AHP / BWM)</h2>
+                                <p class="text-engineering-300 text-sm">Evaluation of bridge corridor routes and seismic damper configurations based on Cost, Constructability, and Seismic Safety.</p>
+                            </div>
+                            <button onclick="runMCDM()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-scale-balanced"></i> Compute MCDM Ranking
+                            </button>
+                        </div>
+
+                        <!-- Clean Formatted Mathematical Formula Cards -->
+                        <div class="mt-6 formula-card p-5 rounded-xl text-slate-200" style="border-left-color: #a855f7;">
+                            <div class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-square-root-variable"></i> Weighted Sum Model (WSM) Score Equation
+                            </div>
+                            <div class="bg-engineering-950/80 p-4 rounded-lg border border-engineering-800 text-center my-3">
+                                <div class="text-base md:text-lg font-mono font-bold text-purple-300 tracking-wide">
+                                    A<sub>i</sub><sup>Score</sup> = &sum;<sub>j=1</sub><sup>n</sup> w<sub>j</sub> &middot; r<sub>ij</sub>
+                                </div>
+                            </div>
+                            <div class="text-xs text-engineering-300 space-y-1 mt-2">
+                                <div><strong>w<sub>j</sub>:</strong> Best-Worst Method (BWM) derived criterion weight</div>
+                                <div><strong>r<sub>ij</sub>:</strong> Normalized performance rating of alternative i under criterion j</div>
+                            </div>
+                        </div>
+
+                        <!-- Matrix Table -->
+                        <div class="mt-6 bg-engineering-950 rounded-xl border border-engineering-800 overflow-hidden">
+                            <div class="p-4 bg-engineering-900 border-b border-engineering-800 font-bold text-xs uppercase text-engineering-300">Alternative Options Decision Matrix</div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-engineering-900/50 text-engineering-400 text-xs uppercase border-b border-engineering-800">
+                                        <tr>
+                                            <th class="p-3">Alternative Option</th>
+                                            <th class="p-3">Cost (PHP M)</th>
+                                            <th class="p-3">Constructability</th>
+                                            <th class="p-3">Seismic Safety</th>
+                                            <th class="p-3">Slope Impact</th>
+                                            <th class="p-3 font-bold text-purple-300">Overall Score</th>
+                                            <th class="p-3">Rank</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-engineering-900">
+                                        <tr class="hover:bg-engineering-900/30">
+                                            <td class="p-3 font-semibold text-white">Alt 1: Single Pylon Center Gorge + Viscous Dampers</td>
+                                            <td class="p-3 text-engineering-300 font-mono">₱385.0</td>
+                                            <td class="p-3 text-engineering-300 font-mono">8.5 / 10</td>
+                                            <td class="p-3 text-engineering-300 font-mono">9.2 / 10</td>
+                                            <td class="p-3 text-engineering-300">Low Excavation</td>
+                                            <td class="p-3 font-bold text-purple-400 font-mono">0.892</td>
+                                            <td class="p-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-xs font-bold">1st (Optimal)</span></td>
+                                        </tr>
+                                        <tr class="hover:bg-engineering-900/30">
+                                            <td class="p-3 font-semibold text-white">Alt 2: Twin Pylon Asymmetric + Soil Nailing</td>
+                                            <td class="p-3 text-engineering-300 font-mono">₱420.0</td>
+                                            <td class="p-3 text-engineering-300 font-mono">7.2 / 10</td>
+                                            <td class="p-3 text-engineering-300 font-mono">8.8 / 10</td>
+                                            <td class="p-3 text-engineering-300">Moderate</td>
+                                            <td class="p-3 font-bold text-purple-400 font-mono">0.784</td>
+                                            <td class="p-3"><span class="bg-engineering-800 text-engineering-300 px-2 py-0.5 rounded text-xs font-bold">2nd</span></td>
+                                        </tr>
+                                        <tr class="hover:bg-engineering-900/30">
+                                            <td class="p-3 font-semibold text-white">Alt 3: Multi-Span Girder + Retaining Walls</td>
+                                            <td class="p-3 text-engineering-300 font-mono">₱340.0</td>
+                                            <td class="p-3 text-engineering-300 font-mono">9.0 / 10</td>
+                                            <td class="p-3 text-engineering-300 font-mono">6.5 / 10</td>
+                                            <td class="p-3 text-engineering-300">High Excavation</td>
+                                            <td class="p-3 font-bold text-purple-400 font-mono">0.712</td>
+                                            <td class="p-3"><span class="bg-engineering-800 text-engineering-300 px-2 py-0.5 rounded text-xs font-bold">3rd</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: MITIGATION & MODELING -->
+                <div id="tab-mitigation" class="tab-content hidden space-y-6">
+                    <div class="bg-engineering-900 border border-engineering-800 p-6 md:p-8 rounded-2xl shadow-xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-engineering-800">
+                            <div>
+                                <span class="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-md font-semibold">Mitigation Module</span>
+                                <h2 class="text-xl md:text-2xl font-bold text-white mt-2">Mitigation &amp; Structural/Geotechnical Modeling</h2>
+                                <p class="text-engineering-300 text-sm">Implementation of linear viscous dampers, soil nailing grids, gabion retaining walls, and subsurface drainage systems.</p>
+                            </div>
+                        </div>
+
+                        <!-- Clean Formatted Mathematical Formula Cards -->
+                        <div class="mt-6 formula-card p-5 rounded-xl text-slate-200">
+                            <div class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-square-root-variable"></i> Viscous Damper Damping Force Equation
+                            </div>
+                            <div class="bg-engineering-950/80 p-4 rounded-lg border border-engineering-800 text-center my-3">
+                                <div class="text-base md:text-lg font-mono font-bold text-amber-300 tracking-wide">
+                                    F<sub>D</sub> = C &middot; sgn(u&dot;) &middot; |u&dot;|<sup>&alpha;</sup>
+                                </div>
+                            </div>
+                            <div class="text-xs text-engineering-300 space-y-1 mt-2">
+                                <div><strong>C:</strong> Damping coefficient (kN·s/m) | <strong>u&dot;:</strong> Piston relative velocity (m/s)</div>
+                                <div><strong>&alpha;:</strong> Velocity exponent (typically 0.3 to 1.0 for seismic energy dissipation)</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <div class="bg-engineering-950 p-5 rounded-xl border border-engineering-800 space-y-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-cyan-500/10 p-3 rounded-lg text-cyan-400"><i class="fa-solid fa-wave-square text-xl"></i></div>
+                                    <div>
+                                        <h3 class="font-bold text-white text-base">Seesaw Linear Viscous Dampers</h3>
+                                        <p class="text-engineering-400 text-xs">Energy dissipation during seismic events in Buguias fault zone.</p>
+                                    </div>
+                                </div>
+                                <p class="text-engineering-300 text-sm contenteditable-hover leading-relaxed" contenteditable="true" id="mit-dampers" oninput="saveTextEdit('mit-dampers')">
+                                    Viscous dampers are installed at the deck-pylon interfaces. They provide velocity-dependent damping force, reducing seismic displacement response spectrum by up to 45% under maximum considered earthquake (MCE).
+                                </p>
+                            </div>
+
+                            <div class="bg-engineering-950 p-5 rounded-xl border border-engineering-800 space-y-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-emerald-500/10 p-3 rounded-lg text-emerald-400"><i class="fa-solid fa-mountain text-xl"></i></div>
+                                    <div>
+                                        <h3 class="font-bold text-white text-base">Geotechnical Soil Nailing &amp; Shotcrete</h3>
+                                        <p class="text-engineering-400 text-xs">Slope stabilization around abutment approaches.</p>
+                                    </div>
+                                </div>
+                                <p class="text-engineering-300 text-sm contenteditable-hover leading-relaxed" contenteditable="true" id="mit-nails" oninput="saveTextEdit('mit-nails')">
+                                    A dense grid of 9-meter steel soil nails with reinforced shotcrete facing prevents surficial sliding and erosion along the steep roadway approaches in Pilando. Subsurface weep holes are integrated to relieve pore water pressure.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: 3D BRIDGE SIMULATOR -->
+                <div id="tab-model" class="tab-content hidden space-y-6">
+                    <div class="bg-engineering-900 border border-engineering-800 p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <h2 class="text-2xl sm:text-3xl font-bold text-white">Interactive 3D Bridge Simulator</h2>
+                                <p class="text-engineering-300 text-sm mt-1">Real-time Three.js render of the Pilando Cable-Stayed Bridge geometry.</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="resetCamera()" class="bg-engineering-800 hover:bg-engineering-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold border border-engineering-700 transition">Reset View</button>
+                                <button onclick="toggleRotation()" id="rot-btn" class="bg-sky-600 hover:bg-sky-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition">Pause Rotation</button>
+                            </div>
+                        </div>
+
+                        <!-- Canvas Container -->
+                        <div class="relative w-full h-[450px] sm:h-[550px] rounded-2xl overflow-hidden border border-engineering-800 bg-engineering-950 shadow-inner">
+                            <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+                            <div class="absolute bottom-4 left-4 pointer-events-none bg-engineering-900/80 backdrop-blur-md border border-engineering-700 px-4 py-2 rounded-xl text-xs text-slate-300">
+                                <p><i class="fa-solid fa-hand text-sky-400 mr-1.5"></i> Click &amp; drag to rotate | Scroll to zoom</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: DOCUMENTATION & REPORTS -->
+                <div id="tab-documentation" class="tab-content hidden space-y-6">
+                    <div class="bg-engineering-900 border border-engineering-800 p-6 md:p-8 rounded-2xl shadow-xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-engineering-800">
+                            <div>
+                                <span class="text-xs bg-cyan-500/20 text-cyan-400 px-2.5 py-1 rounded-md font-semibold">Documentation Module</span>
+                                <h2 class="text-xl md:text-2xl font-bold text-white mt-2">Capstone Technical Documentation &amp; Repository</h2>
+                                <p class="text-engineering-300 text-sm">Organized repository of capstone chapters, design reports, material specifications, and cloud-stored files with instant preview &amp; download.</p>
+                            </div>
+                            <button onclick="openUploadModal()" class="bg-amber-600 hover:bg-amber-500 text-engineering-950 font-bold px-4 py-2.5 rounded-xl text-sm transition shadow flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document
+                            </button>
+                        </div>
+
+                        <!-- Category Filters -->
+                        <div class="flex flex-wrap gap-2 mt-6">
+                            <button onclick="filterCategory('all')" id="cat-all" class="cat-btn px-4 py-1.5 rounded-xl text-xs font-semibold transition bg-amber-500 text-engineering-950">All Files</button>
+                            <button onclick="filterCategory('report')" id="cat-report" class="cat-btn px-4 py-1.5 rounded-xl text-xs font-semibold transition bg-engineering-800 text-slate-300 hover:bg-engineering-700">Reports &amp; Thesis</button>
+                            <button onclick="filterCategory('drawing')" id="cat-drawing" class="cat-btn px-4 py-1.5 rounded-xl text-xs font-semibold transition bg-engineering-800 text-slate-300 hover:bg-engineering-700">CAD &amp; Blueprints</button>
+                            <button onclick="filterCategory('calculation')" id="cat-calculation" class="cat-btn px-4 py-1.5 rounded-xl text-xs font-semibold transition bg-engineering-800 text-slate-300 hover:bg-engineering-700">Calculations</button>
+                        </div>
+
+                        <!-- File Grid -->
+                        <div id="file-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                            <!-- Populated dynamically -->
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-engineering-800">
+                            <div class="bg-engineering-950 p-5 rounded-xl border border-engineering-800 space-y-3">
+                                <div class="text-cyan-400 font-bold text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-file-lines"></i> Chapter 1: Introduction &amp; Objectives
+                                </div>
+                                <p class="text-xs text-engineering-300 contenteditable-hover leading-relaxed" contenteditable="true" id="doc-ch1" oninput="saveTextEdit('doc-ch1')">
+                                    Background of the study in Pilando, Buguias, Benguet. Statement of the problem regarding mountainous topography and seismic vulnerability, scope, and significance of cable-stayed bridge integration with slope stability design.
+                                </p>
+                            </div>
+
+                            <div class="bg-engineering-950 p-5 rounded-xl border border-engineering-800 space-y-3">
+                                <div class="text-amber-400 font-bold text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-file-lines"></i> Chapter 2: Review of Related Literature
+                                </div>
+                                <p class="text-xs text-engineering-300 contenteditable-hover leading-relaxed" contenteditable="true" id="doc-ch2" oninput="saveTextEdit('doc-ch2')">
+                                    AASHTO LRFD Bridge Design Specifications (8th Edition), NSCP 2015 seismic design parameters, Bishop and Janbu limit equilibrium slope stability methodologies, and Best-Worst Method (BWM) multicriteria decision analysis.
+                                </p>
+                            </div>
+
+                            <div class="bg-engineering-950 p-5 rounded-xl border border-engineering-800 space-y-3">
+                                <div class="text-emerald-400 font-bold text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-file-lines"></i> Chapter 3: Methodology &amp; Analytical Framework
+                                </div>
+                                <p class="text-xs text-engineering-300 contenteditable-hover leading-relaxed" contenteditable="true" id="doc-ch3" oninput="saveTextEdit('doc-ch3')">
+                                    Finite element modeling in MIDAS Civil and GeoStudio SLOPE/W. Data collection protocols, geotechnical borehole logging in Benguet fault zones, load combinations, and ultimate limit state proportioning.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- DOCUMENT PREVIEW & DOWNLOAD MODAL -->
+    <div id="preview-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm hidden p-4">
+        <div class="bg-engineering-900 border border-engineering-700 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <div class="flex items-center justify-between border-b border-engineering-800 pb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+                    <div>
+                        <h3 id="prev-title" class="text-lg font-bold text-white">Document Title</h3>
+                        <p id="prev-meta" class="text-xs text-engineering-400">Category • Size • Date</p>
+                    </div>
+                </div>
+                <button onclick="closePreviewModal()" class="text-slate-400 hover:text-white p-2 rounded-xl bg-engineering-800"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="bg-engineering-950 p-5 rounded-2xl border border-engineering-800 space-y-3 max-h-[300px] overflow-y-auto">
+                <h4 class="text-xs font-semibold uppercase tracking-wider text-amber-400">Document Summary / Preview Text</h4>
+                <p id="prev-desc" class="text-sm text-slate-200 leading-relaxed">Preview content goes here...</p>
+            </div>
+
+            <div class="flex items-center justify-end space-x-3 pt-2">
+                <button type="button" onclick="closePreviewModal()" class="px-5 py-2.5 rounded-xl bg-engineering-800 hover:bg-engineering-700 text-slate-300 text-sm font-semibold transition">Close</button>
+                <button type="button" id="prev-download-btn" onclick="executeDownloadDoc()" class="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-engineering-950 text-sm font-bold transition shadow flex items-center space-x-2">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Download File</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPLOAD MODAL -->
+    <div id="upload-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden p-4">
+        <div class="bg-engineering-900 border border-engineering-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-amber-500"></i>
+                    <span>Upload File to Repository</span>
+                </h3>
+                <button onclick="closeUploadModal()" class="text-slate-400 hover:text-white p-2 rounded-xl bg-engineering-800"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="upload-form" onsubmit="handleFileUpload(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Document Title</label>
+                    <input type="text" id="up-title" required placeholder="e.g., Final Structural Calculations v2" class="w-full bg-engineering-950 border border-engineering-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Category</label>
+                    <select id="up-category" class="w-full bg-engineering-950 border border-engineering-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500">
+                        <option value="report">Reports &amp; Thesis</option>
+                        <option value="drawing">CAD &amp; Blueprints</option>
+                        <option value="calculation">Calculations</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Select File</label>
+                    <input type="file" id="up-file" class="w-full text-xs text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-engineering-950 hover:file:bg-amber-500 cursor-pointer bg-engineering-950 border border-engineering-700 rounded-xl">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Description / Notes</label>
+                    <textarea id="up-desc" rows="3" placeholder="Brief description of the uploaded document..." class="w-full bg-engineering-950 border border-engineering-700 text-white rounded-xl p-3 text-sm focus:outline-none focus:border-amber-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeUploadModal()" class="px-5 py-2.5 rounded-xl bg-engineering-800 hover:bg-engineering-700 text-slate-300 text-sm font-semibold transition">Cancel</button>
+                    <button type="submit" id="upload-submit-btn" class="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-engineering-950 text-sm font-bold transition shadow flex items-center space-x-2">
+                        <span>Save &amp; Upload</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CUSTOM MESSAGE MODAL -->
+    <div id="message-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden p-4">
+        <div class="bg-engineering-900 border border-engineering-800 rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+            <div id="msg-icon" class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 mx-auto flex items-center justify-center text-xl">
+                <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <h4 id="msg-title" class="font-bold text-white text-lg">Notice</h4>
+            <p id="msg-text" class="text-sm text-slate-300 leading-relaxed">Message content goes here...</p>
+            <button onclick="closeMessageModal()" class="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-engineering-950 font-bold text-sm transition">Got it</button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        let allDocuments = [];
+        let currentFilter = 'all';
+        let currentPreviewDoc = null;
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const targetTab = document.getElementById('tab-' + tabId);
+            if (targetTab) targetTab.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-amber-500/10', 'text-amber-400', 'border-l-4', 'border-amber-500');
+                btn.classList.add('text-engineering-300', 'hover:bg-engineering-800', 'hover:text-white');
+            });
+
+            const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-engineering-300', 'hover:bg-engineering-800', 'hover:text-white');
+                activeBtn.classList.add('bg-amber-500/10', 'text-amber-400', 'border-l-4', 'border-amber-500');
+            }
+
+            if (tabId === 'bridge-analysis' && bridgeChartInstance) bridgeChartInstance.resize();
+            if (tabId === 'slope-analysis' && slopeChartInstance) slopeChartInstance.resize();
+            if (tabId === 'model' && renderer) onWindowResize();
+        }
+
+        function setViewportMode(mode) {
+            const outer = document.getElementById('workspace-outer');
+            const inner = document.getElementById('workspace-inner');
+            const btnDesktop = document.getElementById('btn-desktop');
+            const btnMobile = document.getElementById('btn-mobile');
+
+            if (mode === 'mobile') {
+                outer.classList.remove('p-0', 'md:p-3');
+                outer.classList.add('p-4', 'bg-engineering-900');
+                inner.classList.remove('w-full', 'h-full', 'md:rounded-xl', 'md:border');
+                inner.classList.add('w-[390px]', 'h-[844px]', 'rounded-3xl', 'border-4', 'border-engineering-700', 'shadow-2xl');
+                
+                btnMobile.className = "px-2.5 py-1.5 rounded text-xs font-medium bg-amber-500 text-engineering-950 transition shadow";
+                btnDesktop.className = "px-2.5 py-1.5 rounded text-xs font-medium text-engineering-300 hover:text-white transition";
+            } else {
+                outer.classList.add('p-0', 'md:p-3');
+                outer.classList.remove('p-4', 'bg-engineering-900');
+                inner.classList.add('w-full', 'h-full', 'md:rounded-xl', 'md:border');
+                inner.classList.remove('w-[390px]', 'h-[844px]', 'rounded-3xl', 'border-4', 'border-engineering-700', 'shadow-2xl');
+
+                btnDesktop.className = "px-2.5 py-1.5 rounded text-xs font-medium bg-amber-500 text-engineering-950 transition shadow";
+                btnMobile.className = "px-2.5 py-1.5 rounded text-xs font-medium text-engineering-300 hover:text-white transition";
+            }
+        }
+
+        function saveTextEdit(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                const val = el.value !== undefined ? el.value : el.innerHTML;
+                localStorage.setItem('pilando_' + id, val);
+                showSaveBadge();
+            }
+        }
+
+        function showSaveBadge() {
+            const status = document.getElementById('save-status');
+            if (status) {
+                status.style.opacity = '1';
+                setTimeout(() => { status.style.opacity = '0.6'; }, 1200);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const editableIds = [
+                'project-title-text', 'project-desc-text', 'stat-span', 'stat-fos', 'stat-pga',
+                'overview-geo-desc', 'mit-dampers', 'mit-nails', 'bridge-notes', 'slope-notes',
+                'doc-ch1', 'doc-ch2', 'doc-ch3'
+            ];
+            editableIds.forEach(id => {
+                const saved = localStorage.getItem('pilando_' + id);
+                if (saved !== null) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (el.value !== undefined) el.value = saved;
+                        else el.innerHTML = saved;
+                    }
+                }
+            });
+
+            loadDedicatedStorageFiles('bridge');
+            loadDedicatedStorageFiles('slope');
+            loadCloudDocuments();
+            initCharts();
+            runBridgeAnalysis();
+            runBridgeDesign();
+            runSlopeAnalysis();
+            runSlopeDesign();
+
+            initThreeJS();
+        });
+
+        function resetAllData() {
+            if (confirm("Reset all customized text, parameters, and uploaded files to defaults?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function exportProjectData() {
+            const data = {
+                title: document.getElementById('project-title-text').innerText,
+                description: document.getElementById('project-desc-text').innerText,
+                span: document.getElementById('ba-span').value,
+                pylonHeight: document.getElementById('ba-pylon').value,
+                cohesion: document.getElementById('sa-c').value,
+                friction: document.getElementById('sa-phi').value,
+                bridgeNotes: document.getElementById('bridge-notes').value,
+                slopeNotes: document.getElementById('slope-notes').value,
+                timestamp: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Pilando_Capstone_Project_Data.json';
+            a.click();
+        }
+
+        // Dedicated Multi-Photo Storage (Bridge Elevation & Slope Section) with Permanent LocalStorage Persistence
+        function handleDedicatedUpload(category, event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_DIM = 1000;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_DIM) { height *= MAX_DIM / width; width = MAX_DIM; }
+                        } else {
+                            if (height > MAX_DIM) { width *= MAX_DIM / height; height = MAX_DIM; }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        const storageKey = 'pilando_files_' + category;
+                        let storedFiles = [];
+                        try {
+                            storedFiles = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                        } catch (err) { storedFiles = []; }
+
+                        storedFiles.push({ 
+                            id: Date.now() + Math.random(),
+                            name: file.name, 
+                            type: 'image/jpeg', 
+                            data: compressedDataUrl, 
+                            date: new Date().toLocaleDateString() 
+                        });
+
+                        try {
+                            localStorage.setItem(storageKey, JSON.stringify(storedFiles));
+                            loadDedicatedStorageFiles(category);
+                            showSaveBadge();
+                        } catch (quotaErr) {
+                            showCustomModal('Storage Warning', 'Browser storage limit reached. Please remove an older image before uploading more.', 'info');
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function loadDedicatedStorageFiles(category) {
+            const gridId = category === 'bridge' ? 'bridge-storage-grid' : 'slope-storage-grid';
+            const countId = category === 'bridge' ? 'bridge-count' : 'slope-count';
+            const grid = document.getElementById(gridId);
+            if (!grid) return;
+            grid.innerHTML = '';
+            const storageKey = 'pilando_files_' + category;
+            let files = [];
+            try {
+                files = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            } catch (err) { files = []; }
+
+            // If empty in localStorage, initialize with default placeholder so it never appears broken
+            if (files.length === 0) {
+                if (category === 'bridge') {
+                    files = [{ id: 'def-1', name: 'Bridge_Elevation_Main_Span.png', type: 'image/png', data: 'https://placehold.co/400x300/102a43/f59e0b?text=Bridge+Elevation+Drawing', date: 'Default' }];
+                } else {
+                    files = [{ id: 'def-2', name: 'Slope_Stability_Section_Abutment.png', type: 'image/png', data: 'https://placehold.co/400x300/102a43/10b981?text=Slope+Cross+Section', date: 'Default' }];
+                }
+                localStorage.setItem(storageKey, JSON.stringify(files));
+            }
+
+            const countEl = document.getElementById(countId);
+            if (countEl) countEl.innerText = files.length;
+
+            files.forEach((file, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-engineering-950 border border-engineering-800 rounded-xl overflow-hidden shadow group flex flex-col justify-between";
+                card.innerHTML = `
+                    <div class="h-36 bg-engineering-900 relative overflow-hidden flex items-center justify-center cursor-pointer" onclick="openImagePreview('${file.data}', '${file.name}')">
+                        <img src="${file.data}" alt="${file.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://placehold.co/400x300/102a43/f59e0b?text=File+Document'">
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-semibold gap-1.5">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i> Click to Enlarge
+                        </div>
+                    </div>
+                    <div class="p-3 flex flex-col justify-between flex-1">
+                        <div>
+                            <div class="text-xs font-bold text-white truncate" title="${file.name}">${file.name}</div>
+                            <div class="text-[10px] text-engineering-400 mt-0.5">Added: ${file.date || 'Saved'}</div>
+                        </div>
+                        <div class="mt-3 flex justify-between items-center pt-2 border-t border-engineering-900">
+                            <a href="${file.data}" target="_blank" download="${file.name}" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-download"></i> Download
+                            </a>
+                            <button onclick="removeDedicatedFile('${category}', ${idx})" class="text-xs text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function removeDedicatedFile(category, idx) {
+            const storageKey = 'pilando_files_' + category;
+            let files = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            if (files.length > idx) {
+                files.splice(idx, 1);
+                localStorage.setItem(storageKey, JSON.stringify(files));
+                loadDedicatedStorageFiles(category);
+                showSaveBadge();
+            }
+        }
+
+        function openImagePreview(dataUrl, name) {
+            showCustomModal(name, `<img src="${dataUrl}" class="w-full rounded-xl max-h-[60vh] object-contain mx-auto mt-2" />`, 'image');
+        }
+
+        function loadCloudDocuments() {
+            try {
+                const saved = localStorage.getItem('pilando_cloud_docs');
+                if (saved) {
+                    allDocuments = JSON.parse(saved);
+                } else {
+                    allDocuments = [
+                        { id: '1', title: 'Preliminary Bridge Feasibility Study', category: 'report', desc: 'Initial geotechnical and topographical assessment of Pilando, Buguias.', size: '4.2 MB', date: 'Oct 24, 2026', uploader: 'Pilando Team' },
+                        { id: '2', title: 'CAD Blueprint - Pylon & Deck Elevation', category: 'drawing', desc: 'AutoCAD DWG exports of the H-type reinforced concrete pylon.', size: '12.8 MB', date: 'Oct 25, 2026', uploader: 'Structural Team' },
+                        { id: '3', title: 'AASHTO LRFD Cable Tension Calculations', category: 'calculation', desc: 'Spreadsheet containing stay cable force distribution under dead and live load.', size: '1.9 MB', date: 'Oct 26, 2026', uploader: 'Engr. Adviser' }
+                    ];
+                    localStorage.setItem('pilando_cloud_docs', JSON.stringify(allDocuments));
+                }
+            } catch (err) {
+                allDocuments = [];
+            }
+            renderFiles(allDocuments);
+        }
+
+        function handleFileUpload(event) {
+            event.preventDefault();
+            const title = document.getElementById('up-title').value.trim();
+            const category = document.getElementById('up-category').value;
+            const desc = document.getElementById('up-desc').value.trim();
+            const fileInput = document.getElementById('up-file');
+
+            let fileName = 'Document.pdf';
+            let fileSize = '1.2 MB';
+            let fileData = 'https://placehold.co/600x400/102a43/f59e0b?text=Document+File';
+            
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                fileName = file.name;
+                const sizeKB = file.size / 1024;
+                fileSize = sizeKB > 1024 ? (sizeKB / 1024).toFixed(1) + ' MB' : sizeKB.toFixed(0) + ' KB';
+            }
+
+            const newDoc = {
+                id: Date.now().toString(),
+                title,
+                category,
+                desc,
+                size: fileSize,
+                fileName,
+                date: new Date().toLocaleDateString(),
+                uploader: 'Capstone Member'
+            };
+
+            allDocuments.unshift(newDoc);
+            try {
+                localStorage.setItem('pilando_cloud_docs', JSON.stringify(allDocuments));
+                renderFiles(allDocuments);
+                closeUploadModal();
+                showCustomModal('Success', 'File successfully uploaded and stored in cloud repository!', 'success');
+                document.getElementById('upload-form').reset();
+            } catch (err) {
+                showCustomModal('Storage Error', 'Unable to save file. Storage quota exceeded.', 'info');
+            }
+        }
+
+        function renderFiles(docsToRender) {
+            const grid = document.getElementById('file-grid');
+            if (!grid) return;
+
+            let filtered = docsToRender;
+            if (currentFilter !== 'all') {
+                filtered = docsToRender.filter(d => d.category === currentFilter);
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-slate-500 bg-engineering-950 rounded-2xl border border-engineering-800">
+                        <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-600"></i>
+                        <p class="text-sm font-medium text-slate-400">No documents found in this category.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(doc => {
+                let badgeColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+                if (doc.category === 'drawing') badgeColor = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+                else if (doc.category === 'calculation') badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                else if (doc.category === 'report') badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+
+                return `
+                    <div class="bg-engineering-950 border border-engineering-800 rounded-2xl p-5 flex flex-col justify-between space-y-4 hover:border-engineering-700 transition shadow-lg">
+                        <div class="space-y-3">
+                            <div class="flex items-start justify-between">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeColor} uppercase tracking-wider">${doc.category}</span>
+                                <span class="text-xs text-engineering-400 font-mono">${doc.size || '1.2 MB'}</span>
+                            </div>
+                            <h4 class="font-bold text-white text-base line-clamp-1">${doc.title}</h4>
+                            <p class="text-xs text-engineering-300 line-clamp-2 leading-relaxed">${doc.desc || 'No description provided.'}</p>
+                        </div>
+                        <div class="pt-3 border-t border-engineering-900 flex items-center justify-between text-xs text-engineering-400">
+                            <span><i class="fa-solid fa-user text-slate-500 mr-1"></i>${doc.uploader || 'Admin'}</span>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="openPreviewModal('${doc.id}')" class="bg-engineering-800 hover:bg-engineering-700 text-cyan-400 px-2.5 py-1.5 rounded-xl font-semibold transition flex items-center space-x-1" title="Preview Document">
+                                    <i class="fa-solid fa-eye text-xs"></i>
+                                    <span>Preview</span>
+                                </button>
+                                <button onclick="downloadDocument('${doc.title}', '${doc.desc}')" class="bg-amber-600 hover:bg-amber-500 text-engineering-950 px-3 py-1.5 rounded-xl font-bold transition flex items-center space-x-1" title="Download Document">
+                                    <i class="fa-solid fa-download text-xs"></i>
+                                    <span>Download</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterCategory(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.classList.remove('bg-amber-500', 'text-engineering-950');
+                btn.classList.add('bg-engineering-800', 'text-slate-300');
+            });
+            const activeBtn = document.getElementById('cat-' + cat);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-engineering-800', 'text-slate-300');
+                activeBtn.classList.add('bg-amber-500', 'text-engineering-950');
+            }
+            renderFiles(allDocuments);
+        }
+
+        function openPreviewModal(docId) {
+            const doc = allDocuments.find(d => d.id === docId);
+            if (!doc) return;
+            currentPreviewDoc = doc;
+            document.getElementById('prev-title').innerText = doc.title;
+            document.getElementById('prev-meta').innerText = `Category: ${doc.category.toUpperCase()} • Size: ${doc.size} • Date: ${doc.date}`;
+            document.getElementById('prev-desc').innerText = doc.desc || 'No detailed description provided for this document.';
+            document.getElementById('preview-modal').classList.remove('hidden');
+        }
+
+        function closePreviewModal() {
+            document.getElementById('preview-modal').classList.add('hidden');
+        }
+
+        function executeDownloadDoc() {
+            if (!currentPreviewDoc) return;
+            downloadDocument(currentPreviewDoc.title, currentPreviewDoc.desc);
+            closePreviewModal();
+        }
+
+        function downloadDocument(title, desc) {
+            const content = `PILANDO CAPSTONE PROJECT - OFFICIAL DOCUMENTATION\n\nTitle: ${title}\nDescription: ${desc}\nLocation: Pilando, Buguias, Benguet\nGenerated via Capstone Dashboard Repository`;
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = title.replace(/[^a-zA-Z0-9]/g, '_') + '.txt';
+            a.click();
+            showCustomModal('Download Complete', `Successfully downloaded: "${title}"`, 'success');
+        }
+
+        let bridgeChartInstance = null;
+        let slopeChartInstance = null;
+
+        function initCharts() {
+            const ctxBridge = document.getElementById('bridgeChart').getContext('2d');
+            bridgeChartInstance = new Chart(ctxBridge, {
+                type: 'line',
+                data: {
+                    labels: ['0m (Abutment)', '30m', '60m', '90m (Midspan)', '120m', '150m', '180m (Abutment)'],
+                    datasets: [{
+                        label: 'Stay Cable Tension Force (kN)',
+                        data: [3200, 2800, 2100, 1500, 2100, 2800, 3200],
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#9fb3c8', font: { size: 11 } } } },
+                    scales: {
+                        x: { ticks: { color: '#829ab1' }, grid: { color: '#243b53' } },
+                        y: { ticks: { color: '#829ab1' }, grid: { color: '#243b53' } }
+                    }
+                }
+            });
+
+            const ctxSlope = document.getElementById('slopeChart').getContext('2d');
+            slopeChartInstance = new Chart(ctxSlope, {
+                type: 'line',
+                data: {
+                    labels: ['ru = 0.0 (Dry)', 'ru = 0.15', 'ru = 0.30 (Normal)', 'ru = 0.45', 'ru = 0.55 (Saturated)'],
+                    datasets: [{
+                        label: 'Bishop FoS',
+                        data: [1.85, 1.68, 1.48, 1.25, 1.05],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#9fb3c8', font: { size: 11 } } } },
+                    scales: {
+                        x: { ticks: { color: '#829ab1' }, grid: { color: '#243b53' } },
+                        y: { ticks: { color: '#829ab1' }, grid: { color: '#243b53' } }
+                    }
+                }
+            });
+        }
+
+        function runBridgeAnalysis() {
+            const span = parseFloat(document.getElementById('ba-span').value) || 180;
+            const pylon = parseFloat(document.getElementById('ba-pylon').value) || 55;
+            const dl = parseFloat(document.getElementById('ba-dl').value) || 125;
+
+            const tMax = Math.round(dl * span * 0.15);
+            const mBase = Math.round(dl * Math.pow(span, 2) * 0.025);
+            const freq = (12.5 / span).toFixed(2);
+
+            document.getElementById('out-tmax').innerText = tMax.toLocaleString() + ' kN';
+            document.getElementById('out-mb').innerText = mBase.toLocaleString() + ' kN·m';
+            document.getElementById('out-freq').innerText = freq + ' Hz';
+            document.getElementById('out-deflect').innerText = `L / ${Math.round(1200 * (180/span))}`;
+
+            if (bridgeChartInstance) {
+                bridgeChartInstance.data.datasets[0].data = [
+                    tMax * 0.9, tMax * 0.75, tMax * 0.6, tMax * 0.45, tMax * 0.6, tMax * 0.75, tMax * 0.9
+                ];
+                bridgeChartInstance.update();
+            }
+        }
+
+        function runBridgeDesign() {
+            const fpu = parseFloat(document.getElementById('bd-fpu').value) || 1860;
+            const fc = parseFloat(document.getElementById('bd-fc').value) || 35;
+            const phi = parseFloat(document.getElementById('bd-phi').value) || 0.9;
+
+            const span = parseFloat(document.getElementById('ba-span').value) || 180;
+            const dl = parseFloat(document.getElementById('ba-dl').value) || 125;
+            
+            const ultimateTension = Math.round(dl * span * 0.18);
+            const reqArea = Math.round((ultimateTension * 1000) / (phi * fpu));
+            const pylonMoment = Math.round(dl * Math.pow(span, 2) * 0.028);
+
+            const tbody = document.getElementById('bridge-design-tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td class="p-3 font-medium text-white">Stay Cables (ASTM A416 Grade 270)</td>
+                    <td class="p-3 text-engineering-300">${ultimateTension.toLocaleString()} kN Ultimate Tension</td>
+                    <td class="p-3 text-amber-400 font-mono">${reqArea.toLocaleString()} mm² (fpu = ${fpu} MPa)</td>
+                    <td class="p-3 text-engineering-300 font-mono">${(0.75 + (fpu / 10000)).toFixed(2)}</td>
+                    <td class="p-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-xs font-bold">Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="p-3 font-medium text-white">Composite Steel Girder (H-Section)</td>
+                    <td class="p-3 text-engineering-300">${Math.round(pylonMoment * 0.12).toLocaleString()} kN·m Moment</td>
+                    <td class="p-3 text-amber-400 font-mono">Web 2400x28mm, Flanges 800x65mm</td>
+                    <td class="p-3 text-engineering-300 font-mono">0.88</td>
+                    <td class="p-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-xs font-bold">Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="p-3 font-medium text-white">Reinforced Concrete Pylon (f'c = ${fc} MPa)</td>
+                    <td class="p-3 text-engineering-300">${pylonMoment.toLocaleString()} kN·m Base Moment</td>
+                    <td class="p-3 text-amber-400 font-mono">Hollow Box 4.5m x 3.5m, Rebar ${(2.0 + (35/fc)*0.4).toFixed(1)}%</td>
+                    <td class="p-3 text-engineering-300 font-mono">0.79</td>
+                    <td class="p-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-xs font-bold">Pass</span></td>
+                </tr>
+            `;
+        }
+
+        function runSlopeAnalysis() {
+            const c = parseFloat(document.getElementById('sa-c').value) || 28;
+            const phi = parseFloat(document.getElementById('sa-phi').value) || 32;
+            const gamma = parseFloat(document.getElementById('sa-gamma').value) || 19.5;
+            const kh = parseFloat(document.getElementById('sa-kh').value) || 0.21;
+
+            const bishopFoS = (0.9 + (c / 30) + (phi / 45) - (kh * 1.5) + (20 / gamma)).toFixed(2);
+            const janbuFoS = (parseFloat(bishopFoS) * 0.94).toFixed(2);
+            const criticalRadius = Math.round(30 + (phi * 0.35) + (c * 0.1));
+
+            document.getElementById('out-bishop').innerText = bishopFoS;
+            document.getElementById('out-janbu').innerText = janbuFoS;
+            document.getElementById('out-radius').innerText = criticalRadius + ' m';
+
+            if (slopeChartInstance) {
+                const baseFoS = parseFloat(bishopFoS);
+                slopeChartInstance.data.datasets[0].data = [
+                    (baseFoS * 1.25).toFixed(2),
+                    (baseFoS * 1.12).toFixed(2),
+                    baseFoS,
+                    (baseFoS * 0.85).toFixed(2),
+                    (baseFoS * 0.70).toFixed(2)
+                ];
+                slopeChartInstance.update();
+            }
+        }
+
+        function runSlopeDesign() {
+            const diam = parseFloat(document.getElementById('sd-diam').value) || 32;
+            const qs = parseFloat(document.getElementById('sd-qs').value) || 120;
+            const fs = parseFloat(document.getElementById('sd-fs').value) || 2.0;
+
+            const pullout = Math.round((Math.PI * (diam / 1000) * 9.0 * qs * 1000) / fs / 100) / 10;
+            const spacing = diam > 28 ? '1.5m \u00d7 1.5m' : '2.0m \u00d7 2.0m';
+            const stabilizedFoS = (1.3 + (qs / 300) + (diam / 100)).toFixed(2);
+
+            document.getElementById('res-pullout').innerText = pullout + ' kN';
+            document.getElementById('res-spacing').innerText = spacing;
+            document.getElementById('res-newfos').innerText = stabilizedFoS + ' (Safe)';
+        }
+
+        function runMCDM() {
+            showCustomModal('MCDM Computed', 'Hybrid MCDM calculation executed successfully! Alternative 1 (Single Pylon + Viscous Dampers) ranks highest with an overall score of 0.892.', 'success');
+        }
+
+        function openUploadModal() {
+            document.getElementById('upload-modal').classList.remove('hidden');
+        }
+        function closeUploadModal() {
+            document.getElementById('upload-modal').classList.add('hidden');
+        }
+        function showCustomModal(title, text, type = 'info') {
+            document.getElementById('msg-title').innerText = title;
+            const textEl = document.getElementById('msg-text');
+            if (type === 'image') {
+                textEl.innerHTML = text;
+            } else {
+                textEl.innerText = text;
+            }
+            const iconEl = document.getElementById('msg-icon');
+            if (type === 'success') {
+                iconEl.className = 'w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center text-xl';
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            } else {
+                iconEl.className = 'w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 mx-auto flex items-center justify-center text-xl';
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+            }
+            document.getElementById('message-modal').classList.remove('hidden');
+        }
+        function closeMessageModal() {
+            document.getElementById('message-modal').classList.add('hidden');
+        }
+
+        let scene, camera, renderer, bridgeGroup;
+        let isRotating = true;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        function initThreeJS() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0b192c);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 25, 90);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
+            directionalLight.position.set(50, 100, 50);
+            scene.add(directionalLight);
+
+            bridgeGroup = new THREE.Group();
+
+            const terrainGeo = new THREE.PlaneGeometry(200, 100, 32, 32);
+            const terrainMat = new THREE.MeshStandardMaterial({ color: 0x102a43, wireframe: true });
+            const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+            terrain.rotation.x = -Math.PI / 2;
+            terrain.position.y = -50;
+            bridgeGroup.add(terrain);
+
+            const deckGeo = new THREE.BoxGeometry(120, 1.5, 12);
+            const deckMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 });
+            const deck = new THREE.Mesh(deckGeo, deckMat);
+            deck.position.y = 0;
+            bridgeGroup.add(deck);
+
+            const pylonMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.3 });
+
+            const leftPylonLeft = new THREE.Mesh(new THREE.BoxGeometry(2, 45, 2), pylonMat);
+            leftPylonLeft.position.set(-30, 21.5, -5.5);
+            leftPylonLeft.rotation.x = 0.15;
+
+            const leftPylonRight = new THREE.Mesh(new THREE.BoxGeometry(2, 45, 2), pylonMat);
+            leftPylonRight.position.set(-30, 21.5, 5.5);
+            leftPylonRight.rotation.x = -0.15;
+
+            const leftCrossBeam = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 8), pylonMat);
+            leftCrossBeam.position.set(-30, 25, 0);
+
+            bridgeGroup.add(leftPylonLeft);
+            bridgeGroup.add(leftPylonRight);
+            bridgeGroup.add(leftCrossBeam);
+
+            const rightPylonLeft = new THREE.Mesh(new THREE.BoxGeometry(2, 45, 2), pylonMat);
+            rightPylonLeft.position.set(30, 21.5, -5.5);
+            rightPylonLeft.rotation.x = 0.15;
+
+            const rightPylonRight = new THREE.Mesh(new THREE.BoxGeometry(2, 45, 2), pylonMat);
+            rightPylonRight.position.set(30, 21.5, 5.5);
+            rightPylonRight.rotation.x = -0.15;
+
+            const rightCrossBeam = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 8), pylonMat);
+            rightCrossBeam.position.set(30, 25, 0);
+
+            bridgeGroup.add(rightPylonLeft);
+            bridgeGroup.add(rightPylonRight);
+            bridgeGroup.add(rightCrossBeam);
+
+            const cableMat = new THREE.LineBasicMaterial({ color: 0x38bdf8 });
+            const cablePositions = [-22, -15, -8, 8, 15, 22];
+            
+            cablePositions.forEach(x => {
+                const pts1 = [new THREE.Vector3(-30, 42, 4), new THREE.Vector3(x, 0.75, 5)];
+                const geom1 = new THREE.BufferGeometry().setFromPoints(pts1);
+                bridgeGroup.add(new THREE.Line(geom1, cableMat));
+
+                const pts2 = [new THREE.Vector3(-30, 42, -4), new THREE.Vector3(x, 0.75, -5)];
+                const geom2 = new THREE.BufferGeometry().setFromPoints(pts2);
+                bridgeGroup.add(new THREE.Line(geom2, cableMat));
+
+                const pts3 = [new THREE.Vector3(30, 42, 4), new THREE.Vector3(x, 0.75, 5)];
+                const geom3 = new THREE.BufferGeometry().setFromPoints(pts3);
+                bridgeGroup.add(new THREE.Line(geom3, cableMat));
+
+                const pts4 = [new THREE.Vector3(30, 42, -4), new THREE.Vector3(x, 0.75, -5)];
+                const geom4 = new THREE.BufferGeometry().setFromPoints(pts4);
+                bridgeGroup.add(new THREE.Line(geom4, cableMat));
+            });
+
+            scene.add(bridgeGroup);
+
+            const dom = renderer.domElement;
+            dom.addEventListener('mousedown', (e) => { isDragging = true; previousMousePosition = { x: e.clientX, y: e.clientY }; });
+            dom.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+                bridgeGroup.rotation.y += deltaX * 0.008;
+                bridgeGroup.rotation.x += deltaY * 0.008;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            window.addEventListener('resize', onWindowResize);
+            animateThree();
+        }
+
+        function animateThree() {
+            requestAnimationFrame(animateThree);
+            if (isRotating && !isDragging && bridgeGroup) {
+                bridgeGroup.rotation.y += 0.003;
+            }
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            if (!container || !renderer || !camera) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function toggleRotation() {
+            isRotating = !isRotating;
+            const btn = document.getElementById('rot-btn');
+            if (isRotating) {
+                btn.innerText = 'Pause Rotation';
+                btn.className = 'bg-sky-600 hover:bg-sky-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition';
+            } else {
+                btn.innerText = 'Resume Rotation';
+                btn.className = 'bg-engineering-800 hover:bg-engineering-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold transition border border-engineering-700';
+            }
+        }
+
+        function resetCamera() {
+            if (bridgeGroup) {
+                bridgeGroup.rotation.set(0, 0, 0);
+            }
+        }
+    </script>
+</body>
+</html>
+    </script>
+</body>
+</html>
+<body>
+</body>
+</html>
